@@ -6,6 +6,14 @@
 #include <math.h>
 #include <omp.h>
 
+
+/* =============================================
+ * Here is how you can add new ecological process
+ * ---------------------------------------------
+ * 1. Add relevant parameter in STEP 2 (for instance, birth rate, mortality etc.)
+ * 2. Add this process in model_step (STEP 5)
+ * =========================================== */
+
 /* =============================================
  * STEP 1 -- DEFINE PATCH CAPABILITY
  * ===========================================*/
@@ -27,6 +35,7 @@ typedef struct {
  double sigma2[MAX_SPECIES];   // niche breadth of species
  double c[MAX_SPECIES];        // Colonization rate c_i
  double d[MAX_SPECIES];        // Dispersal rate d_i
+ double m[MAX_SPECIES];        // Mortality rate m_i
 
  /* ----------- PATCH CONFIG ---------- */
  double e[MAX_PATCHES];        // Environmental condition e_j
@@ -74,6 +83,7 @@ Model *model_create(int rows, int cols, int n_sp) {
   M->sigma2[i] = urand(0.01, 0.1);
   M->c[i]      = urand(0.2, 0.6);
   M->d[i]      = urand(0.01, 0.05);
+  M->m[i]    = urand(0.01, 0.6);
  }
 
  /* -----  Randomize patches  ----- */
@@ -135,9 +145,9 @@ void model_step(Model *M, double dt, double S) {
   double di = M->d[i];
   for (int p = 0; p < m; ++p) {
    double P_ip = M->P[i * m + p];
-   double growth = ci * P_ip * M->R[i * m + p] * (S - totalP[p]);
+   double growth = ci * P_ip * M->R[i * m + p] * (S - totalP[p]); // growth
 
-   double flux = 0.0;
+   double flux = 0.0;                                             // dispersal
    int cnt = M->nbr_count[p];
    for (int k = 0; k < cnt; ++k) {
     int q = M->nbr_index[p][k];
@@ -146,7 +156,9 @@ void model_step(Model *M, double dt, double S) {
     flux += di * w * delta;
    }
 
-   double newP = P_ip + dt * (growth + flux);
+   double mortality = -M->m[i] * P_ip;                           // For example, define mortality here
+
+   double newP = P_ip + dt * (growth + flux + mortality);         // final occupancy
    if (newP < 0.0) newP = 0.0;
    M->P[i * m + p] = newP;
   }
@@ -164,13 +176,16 @@ static void print_richness(Model *M) {
  printf("Present species richness: %d\n", alive);
 }
 
+
+
+
 int main(void) {
  srand(42);
  Model *M = model_create(4, 4, 20); // 4×4 grid, 20 species
  if (!M) return 1;
 
  const double dt = 0.01, S = 1.0;
- for (int t = 0; t < 10000; ++t) {
+ for (int t = 0; t < 100000; ++t) {
   model_step(M, dt, S);
   if (t % 1000 == 0) print_richness(M);
  }
