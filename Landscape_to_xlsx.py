@@ -5,7 +5,7 @@ from rasterio.warp import reproject, Resampling
 import os
 
 def _minmax_norm(a: np.ndarray) -> np.ndarray:
-    """对有效像元 (非 NaN) 做 min–max 到 [0,1]；全常数时返回 0."""
+    """Convert non-nan data to range [0,1]"""
     a = a.astype(np.float64)
     mask = np.isfinite(a)
     if not np.any(mask):
@@ -28,8 +28,8 @@ def tif_band1_to_excel(
     sheet_name: str = "E"
 ):
     """
-    读取 GeoTIFF 的 band 1 → min–max 标准化 → (可选)重采样 → 导出到 Excel。
-    导出的 xlsx 为 rows×cols 的矩阵；用 pd.read_excel(..., index_col=0) 可直接读成同形状。
+    Always read the band 1 of GeoTIFF → min–max norm → (opt)resampling → to Excel。
+    The excel represents a matrix (rows×cols) ；read it with pd.read_excel(..., index_col=0)。
     """
     resampling_map = {
         "nearest": Resampling.nearest,
@@ -92,3 +92,4 @@ if __name__ == "__main__":
 
     os.chdir('E:\\TheoEcoFramework')
     tif_band1_to_excel(r"TND7ZQ.tiff", r"config_resistance_2.xlsx")
+
