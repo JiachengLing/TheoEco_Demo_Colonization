@@ -1,0 +1,3 @@
+E:/TheoEcoFramework/CProj_TheoEco/cmake-build-default/CMakeFiles/metacomm.dir
+E:/TheoEcoFramework/CProj_TheoEco/cmake-build-default/CMakeFiles/edit_cache.dir
+E:/TheoEcoFramework/CProj_TheoEco/cmake-build-default/CMakeFiles/rebuild_cache.dir

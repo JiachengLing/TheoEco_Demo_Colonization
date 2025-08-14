@@ -17,7 +17,7 @@
  * STEP 1 -- DEFINE PATCH CAPABILITY
  * ===========================================*/
 #define MAX_SPECIES 128
-#define MAX_PATCHES 4096
+#define MAX_PATCHES 999999999
 
 /* =============================================
  * STEP 2 -- DEFINE DATA STRUCTURE
@@ -35,6 +35,7 @@ typedef struct {
  double c[MAX_SPECIES];        // Colonization rate c_i
  double d[MAX_SPECIES];        // Dispersal rate d_i
  double m[MAX_SPECIES];        // Mortality rate m_i
+ double H[MAX_SPECIES][MAX_SPECIES]; // Competitive replacement matrix
 
  /* ----------- PATCH CONFIG ---------- */
  double e[MAX_PATCHES];        // Environmental condition e_j
@@ -118,6 +119,15 @@ Model *model_create(int rows, int cols, int n_sp) {
    M->nbr_count[p] = cnt;
   }
  }
+
+
+ /* ----- Construct competitive displacement table -----*/
+ for (int i=0; i<n_sp; ++i) {
+  for (int j=0; j<n_sp; ++j) {
+   if (i==j) M->H[i][j] = 0.0;
+   else M->H[i][j] = urand(0.0, 1.0);
+  }
+ }
  return M;
 }
 
@@ -157,7 +167,16 @@ void model_step(Model *M, double dt, double S) {
 
    double mortality = -M->m[i] * P_ip;                           // For example, define mortality here
 
-   double newP = P_ip + dt * (growth + flux + mortality);         // final occupancy
+   /* 5.3 Competitive displacement */
+   double competition = 0.0;
+   for (int j=0; j<n; ++j) {
+    if (j==i) continue;
+    double P_jp = M->P[j * m + p];
+    competition += ci*P_ip*M->H[i][j]*P_jp - M->c[j]*P_jp*M->H[i][j]*P_ip;
+   }
+   competition *= M->R[i * m + p];
+
+   double newP = P_ip + dt * (growth + flux + mortality + competition);         // final occupancy
    if (newP < 0.0) newP = 0.0;
    M->P[i * m + p] = newP;
   }
